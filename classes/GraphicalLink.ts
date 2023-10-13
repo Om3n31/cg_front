@@ -13,7 +13,7 @@ export class GraphicalLink {
         this.fromNetwork = fromNetwork;
         this.toNetwork = toNetwork;
         this.segment = new paper.Path();
-        this.segment.strokeWidth = 2;
+        this.segment.strokeWidth = 6;
         this.segment.strokeColor = new paper.Color('#C4F1BE');
 
 
@@ -25,16 +25,5 @@ export class GraphicalLink {
 
         this.segment.visible = true;
         this.segment.smooth();
-
     }
-
-    public removeLink() : void {
-
-        if(this.segment)
-            this.segment.visible = false;
-            this.segment = null;
-
-        return;
-    };
-
   }

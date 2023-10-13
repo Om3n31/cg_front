@@ -41,10 +41,10 @@
 				</div>
 			</slot>
 			<div class="flex justify-between">
-				<button @click="closePopup" class="border-2 border-red-700 mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-red-700 hover:bg-opacity-30">
+				<button @click="closePopup" class="border-2 border-red-700 mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-red-700 hover:bg-opacity-30 transition-all">
 					Cancel
 				</button>
-				<button @click="editLayer" class="border-2 border-cortex-light-green mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-cortex-light-green hover:bg-opacity-30">
+				<button @click="editLayer" class="border-2 border-cortex-light-green mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-cortex-light-green hover:bg-opacity-30 transition-all">
 					Update
 				</button>
 			</div>

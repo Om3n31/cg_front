@@ -45,7 +45,7 @@
 <script setup lang="ts">
 
     import { ref } from 'vue';
-    import { Network, Layer, LayerType, LayerOption, DBLayer, DBNetwork } from '../interfaces/NetworkInterfaces';
+    import { Network, Layer, LayerType, LayerOption, DBLayer } from '../interfaces/NetworkInterfaces';
 
     let showCreationPopup = ref(false);
     let showEditionPopup = ref(false);
@@ -58,9 +58,7 @@
     }
     let layerToEdit = ref<Layer>(defaultLayer);
 
-    //rebuilding the complex objects from the DB
     let network = ref<Network>({ id: undefined, name: '', layers: [] });
-    rebuildNetwork(network.value)
 
     function addLayer(name: string, type: LayerType, options: { option: LayerOption, optionValue: string|number|undefined }[]): void {
         
@@ -105,27 +103,6 @@
 
     function closeEditionPopup() {
         showEditionPopup.value = false;
-    }
-
-    
-    function makeLayerGoLeft(index: number)  {
-
-        if(index == 0)
-            return;
-
-        let layerToMove = network.value.layers[index];
-        network.value.layers[index] = network.value.layers[index-1];
-        network.value.layers[index-1] = layerToMove;
-        }
-
-    function makeLayerGoRight(index: number)  {
-            
-        if(index == network.value.layers.length-1)
-            return;
-
-        let layerToMove = network.value.layers[index];
-        network.value.layers[index] = network.value.layers[index+1];
-        network.value.layers[index+1] = layerToMove;
     }
 
     async function createNetwork() {
@@ -177,36 +154,23 @@
         */
     }
 
-    async function rebuildNetwork(network: Network) {
+    function makeLayerGoLeft(index: number)  {
 
-        let networkDataResponse: DBNetwork | null = await useFetch<DBNetwork>(
-            'http://localhost:8000/neuralnetwork/' + useRoute().params.id.toString() + '/', 
-            {
-                method: 'GET'
-            }
-        ).data.value;
-
-        if(!networkDataResponse)
+        if(index == 0)
             return;
 
-        network.id = networkDataResponse.id;
+        let layerToMove = network.value.layers[index];
+        network.value.layers[index] = network.value.layers[index-1];
+        network.value.layers[index-1] = layerToMove;
+    }
 
-            if(!networkDataResponse.layers) {
-            network.layers = [];
+    function makeLayerGoRight(index: number)  {
+            
+        if(index == network.value.layers.length-1)
             return;
-        }
 
-        for(let layer of networkDataResponse.layers) {
-        
-        }
-
-
-
-
-        //let layerResponse: DBLayer | null = await useFetch<DBLayer>(
-
-
-        console.log(networkDataResponse);
-
+        let layerToMove = network.value.layers[index];
+        network.value.layers[index] = network.value.layers[index+1];
+        network.value.layers[index+1] = layerToMove;
     }
 </script>

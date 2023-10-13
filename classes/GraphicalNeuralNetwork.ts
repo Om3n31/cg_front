@@ -21,7 +21,6 @@ export class GraphicalNeuralNetwork {
     public isDragging: boolean = false;
     public dragOffset: paper.Point | null = null;
     public isLinking: boolean = false
-    public linkingSegments: GraphicalLink[];
     public linkingSegment: paper.Path | null = null;
     public currentPosition: paper.Point;
     public canvas: Canvas;
@@ -71,11 +70,9 @@ export class GraphicalNeuralNetwork {
         this.inputs = 1;
         this.outputs = 1;
         
-        this.linkingSegments = [];
-
         this.linkingSegment = new paper.Path();
         this.linkingSegment.strokeColor = new paper.Color('#525B76');
-        this.linkingSegment.strokeWidth = 3;
+        this.linkingSegment.strokeWidth = 6;
         
         this.path.onMouseDown = (event: any) => this.startDragging(event);
         this.path.onMouseUp = () => this.stopDragging();
@@ -101,66 +98,6 @@ export class GraphicalNeuralNetwork {
 
     }
 
-    public addLink(neuralNetwork: GraphicalNeuralNetwork): void {
-        
-        this.links.forEach(element => {
-            if (element.toNetwork.id == neuralNetwork.id){
-                throw new Error('link already exists');
-            }
-        });
-
-        neuralNetwork.links.forEach(element => {
-            if (element.fromNetwork.id == this.id){
-                throw new Error('link already exists');
-            }
-        });
-
-        if (this.outputs != neuralNetwork.inputs) {
-            throw new Error('inputs number must match outputs number');
-        }
-        
-        let link = new GraphicalLink(this, neuralNetwork);
-
-        this.links.push(link);
-
-        neuralNetwork.links.push(link);
-        
-        return;
-    };
-
-    public removeLink(neuralNetwork: GraphicalNeuralNetwork): void {
-
-        let index: number = 0;
-
-        this.links.forEach(element => {
-            if (element.toNetwork.id == neuralNetwork.id){
-
-                element.removeLink();
-                neuralNetwork.removeLinkDistant(this);
-                this.links.splice(index,1);
-            }  
-            index ++;
-        });
-
-        return;
-    }
-    
-    public removeLinkDistant(neuralNetwork: GraphicalNeuralNetwork): void {
-        let index: number = 0;
-
-        this.links.forEach(element => {
-            if (element.fromNetwork.id == neuralNetwork.id){
-
-                this.links.splice(index,1);
-            }  
-
-            index ++;
-        });
-
-        return;
-    }
-
-
     public startLinking(event: any): void {
         this.isLinking = true;
         this.linkingSegment = new paper.Path();
@@ -175,9 +112,9 @@ export class GraphicalNeuralNetwork {
         if (this.isLinking && this.linkingSegment ) {
 
             let endLink = this.checkPointInLeftHook(event.point);
+            let linkAlreadyExists: boolean = false;
 
             if (endLink.check == true) {
-                
                 
                 let segment = new paper.Path();
                 segment.strokeColor = new paper.Color('#525B76');
@@ -186,11 +123,17 @@ export class GraphicalNeuralNetwork {
                 segment.add(event.point);
                 segment.remove();
                 this.linkingSegment.remove();
-                let graphicalLink = new GraphicalLink(this, endLink.neuralNetwork);
-                this.linkingSegments.push(graphicalLink);
-                endLink.neuralNetwork.linkingSegments.push(graphicalLink);
-                this.isLinking = false;                
 
+                this.canvas.graphicalLinks.forEach(link => {
+                    if ( link.fromNetwork === this && link.toNetwork === endLink.neuralNetwork) {
+                        linkAlreadyExists = true;
+                    }
+                });
+
+                if(!linkAlreadyExists) {
+                    let graphicalLink = new GraphicalLink(this, endLink.neuralNetwork);
+                    this.canvas.graphicalLinks.push(graphicalLink);
+                }
             } else {
 
                 this.linkingSegment.remove();
@@ -245,6 +188,8 @@ export class GraphicalNeuralNetwork {
 
             this.path.position = event.point.add(this.dragOffset);
 
+            this.rectangle = new paper.Rectangle(this.path.bounds.topLeft, this.size);
+
             let textPosition = new paper.Point(this.path.bounds.center.x, this.path.bounds.center.y);
 
             this.text.position = textPosition;
@@ -255,8 +200,8 @@ export class GraphicalNeuralNetwork {
             if (this.leftHook) {
                 this.leftHook.position = this.path.bounds.leftCenter;
             }
-            if (this.linkingSegments && this.linkingSegments.length != 0) {
-                this.linkingSegments.forEach(graphicalLink => {
+            if (this.canvas.graphicalLinks && this.canvas.graphicalLinks.length != 0) {
+                this.canvas.graphicalLinks.forEach(graphicalLink => {
                     if (graphicalLink.fromNetwork == this && graphicalLink.segment) {
                         graphicalLink.segment.segments[0].point = new paper.Point(this.path.bounds.rightCenter);
                     }
@@ -268,4 +213,10 @@ export class GraphicalNeuralNetwork {
         }
     }
 
+    public remove(): void {
+        this.path.remove();
+        this.leftHook?.remove();
+        this.rightHook?.remove();
+        this.text.remove();
+    }
   }
