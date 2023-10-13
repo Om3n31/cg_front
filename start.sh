@@ -1,0 +1,1 @@
+npm i nuxt && npm run dev;

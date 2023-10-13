@@ -1,0 +1,3 @@
+<template>
+    <NetworkEditor></NetworkEditor>
+</template>
