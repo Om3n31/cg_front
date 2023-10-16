@@ -11,6 +11,7 @@ export interface DBNetwork {
 }
 
 export interface Layer {
+    id: number,
     name: string,
     type: LayerType,
     options: {
@@ -20,6 +21,7 @@ export interface Layer {
 }
 
 export interface DBLayer {
+    id: number,
     name: string,
     type: number,
     options: number[]

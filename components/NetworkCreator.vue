@@ -1,14 +1,18 @@
 <template>
-    <input type="text" v-model="network.name" placeholder="New network" class="mb-4 break-all break-words w-full text-3xl bg-slate-700 text-center font-bold"/>
-    <div @click="openCreationPopup()" class="transition-all cursor-pointer inline-flex items-center justify-center px-4 py-2 text-base font-medium leading-6 text-white whitespace-no-wrap bg-slate-800 border-2 border-cortex-light-green rounded-md shadow-sm hover:bg-cortex-light-green hover:bg-opacity-30"> 
-        + Add a layer
-    </div>
+
+
     <Transition>
         <AddLayerPopup v-show="showCreationPopup" @addLayer="addLayer" @close="closeCreationPopup" :network="network"></AddLayerPopup>
     </Transition>    
     <Transition>
         <EditLayerPopup v-show="showEditionPopup" :layerToEdit="layerToEdit" :network="network" @editLayer="editLayer" @close="closeEditionPopup"></EditLayerPopup>
-    </Transition>   
+    </Transition>  
+    
+    <input type="text" v-model="network.name" placeholder="New network" class="mb-4 break-all break-words w-full text-3xl bg-slate-700 text-center font-bold"/>
+    <div @click="openCreationPopup()" class="transition-all cursor-pointer inline-flex items-center justify-center px-4 py-2 text-base font-medium leading-6 text-white whitespace-no-wrap bg-slate-800 border-2 border-cortex-light-green rounded-md shadow-sm hover:bg-cortex-light-green hover:bg-opacity-30"> 
+        + Add a layer
+    </div>
+ 
     <div class="p-2 border-2 border-cortex-green rounded-lg my-2 flex gap-2 border-dashed overflow-x-scroll">
         <div class="w-2/12 border-2 border-cortex-light-green rounded-lg flex" v-for="(layer, index) in network.layers" :key="layer.name">
 
@@ -38,8 +42,15 @@
 
         </div>
     </div>
-    <div @click="createNetwork()" class="cursor-pointer inline-flex items-center justify-center px-4 py-2 text-base font-medium leading-6 text-white whitespace-no-wrap bg-slate-800 border-2 border-cortex-light-green rounded-md shadow-sm hover:bg-cortex-light-green hover:bg-opacity-30 transition-all"> 
+    <div @click="createNetwork()" class="relative cursor-pointer inline-flex items-center justify-center px-4 py-2 text-base font-medium leading-6 text-white whitespace-no-wrap bg-slate-800 border-2 border-cortex-light-green rounded-md shadow-sm hover:bg-cortex-light-green hover:bg-opacity-30 transition-all"> 
+        <div v-show="loading" class="w-full bg-black bg-opacity-50 absolute top-0 left-0 h-full w-full"></div>
         Confirm
+        <div v-show="loading" class="absolute -translate-x-1/2 -translate-y-1/2 top-2/4 left-1/2">
+            <svg aria-hidden="true" class="w-8 h-8 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-cortex-light-green" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+                <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+            </svg>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -52,6 +63,7 @@
 
     //initialize default layer to avoid typing errors when passing the argument to EditLayerPopup
     let defaultLayer = {
+        id: 0,
         name: 'name',
         type: { id: 0, name: 'name', options: []},
         options: []
@@ -59,6 +71,7 @@
     let layerToEdit = ref<Layer>(defaultLayer);
 
     let network = ref<Network>({ id: undefined, name: '', layers: [] });
+    let loading = ref(false);
 
     function addLayer(name: string, type: LayerType, options: { option: LayerOption, optionValue: string|number|undefined }[]): void {
         
@@ -66,7 +79,7 @@
         let typeClone = { ...type };
         let optionsClone = { ...options };
 
-        network.value.layers.push({ name: nameClone, type: typeClone, options: optionsClone});
+        network.value.layers.push({id: 0, name: nameClone, type: typeClone, options: optionsClone});
     }
 
     function editLayer(oldLayerName: string, layerName: string, selectedLayerType: LayerType, selectedLayerTypeOptions: { option: LayerOption, optionValue: string|number|undefined }[]) {
@@ -107,25 +120,29 @@
 
     async function createNetwork() {
 
+        loading.value = true;
+
+        let layerIds: number[] = [];
         let layers: DBLayer[] = [];
 
-        //loop through each layer options 
-        network.value.layers.forEach(layer => {
+        for(let layer of network.value.layers) {
 
             let newLayer = {
+                id: 0,
                 name: layer.name,
                 type: layer.type.id,
                 options: [] as number[]
             } as DBLayer;
 
             let optionId: number = 0;
-            console.log(layer.options);
+
             layer.options = Object.values(layer.options);
-            layer.options.forEach(async(option) => {
+
+            for(let option of layer.options) {
                 
                 option.optionValue = option.optionValue?.toString();
                 
-                let response: number | null = await useFetch<number>(
+                let optionResponse = await useFetch<{id: number, option_value: string}> (
                     'http://localhost:8000/tfoption/', 
                     {
                         method: 'POST',
@@ -134,24 +151,51 @@
                             option_value: option.optionValue
                         }
                     }
-                ).data.value;
+                );
+                    
+                console.log(option.optionValue);
+                console.log(optionResponse);
 
-                optionId = response ? response : 0;
+                optionId = optionResponse.data.value ? (optionResponse.data.value.id ? optionResponse.data.value.id : 0) : 0;
                 
                 console.log(optionId);
 
                 newLayer.options.push(optionId);
-            });
+            }
 
             layers.push(newLayer);
-        });
+        }
 
-        /*
-        await $fetch( '/localhost:8000/neuralnetwork/', {
-            method: 'POST',
-            body: network
-        });
-        */
+        for(let layer of layers) {
+            let layerResponse = await useFetch<DBLayer> (
+                'http://localhost:8000/layer/', 
+                {
+                    method: 'POST',
+                    body: { 
+                        name: layer.name,
+                        type: layer.type,
+                        options: layer.options
+                    }
+                }
+            );
+
+            layer.id = layerResponse.data.value ? (layerResponse.data.value.id ? layerResponse.data.value.id : 0) : 0;
+            layerIds.push(layer.id);
+        }
+
+        let networkResponse = await useFetch<DBLayer> (
+            'http://localhost:8000/neuralnetwork/', 
+            {
+                method: 'POST',
+                body: { 
+                    name: network.value.name,
+                    hdf5: null,
+                    layers: layerIds
+                }
+            }
+        );
+
+        window.location.href = location.origin + '/neural-networks';
     }
 
     function makeLayerGoLeft(index: number)  {
