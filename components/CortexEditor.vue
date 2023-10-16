@@ -57,7 +57,7 @@
                 // Remove event listeners
                 const addNetworkHtml = document.getElementById('menu-item-add');
                 if (addNetworkHtml) {
-                    addNetworkHtml.removeEventListener('click', openAddNetworkPopupddNetwork);
+                    addNetworkHtml.removeEventListener('click', openAddNetworkPopup);
                 }
                 const deleteNetworkHtml = document.getElementById('menu-item-delete-NN');
                 if (deleteNetworkHtml) {
@@ -163,34 +163,41 @@
 
                 openAddNetworkPopup = () => {
                     if (contextMenu && contextMenu.style.display === 'block') {
-
                         showAddNetworkPopup.value = true;
                     }
                     closeContextMenu();
                 }
-                        /*const networkCounter = canvas.graphicalNeuralNetworks.length;
-                        canvas.graphicalNeuralNetworks.push(
-                            new GraphicalNeuralNetwork(
-                                networkCounter,
-                                pointerInCanvas.x, 
-                                pointerInCanvas.y, 
-                                100,
-                                100,
-                                '#525B76',
-                                'Network ' + networkCounter,
-                                false,
-                                false,
-                                canvas
-                            )
-                        );
-                        */
                         
-                
-                };
 
                 const addNetworkHtml = document.getElementById('menu-item-add');
                     if (addNetworkHtml) {
-                        addNetworkHtml.addEventListener('click', addNetwork);
+                        addNetworkHtml.addEventListener('click', openAddNetworkPopup);
+                }
+
+                addNetwork = (network: Network) => {
+
+                    let networkId: number = 0;
+                    let networkName: string = '';
+
+                    if(network.id && network.name){
+                        networkId = network.id;
+                        networkName = networkName;
+                    }
+
+                    canvas.graphicalNeuralNetworks.push(
+                        new GraphicalNeuralNetwork(
+                            networkId,
+                            pointerInCanvas.x, 
+                            pointerInCanvas.y, 
+                            100,
+                            100,
+                            '#525B76',
+                            networkName,
+                            false,
+                            false,
+                            canvas
+                        )
+                    );
                 }
 
                 // CONTEXT MENU : EDIT NETWORK BEHAVIOR //
