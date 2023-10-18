@@ -69,13 +69,16 @@
 
 	const emit = defineEmits(['editLayer', 'close']);
 
-	let layerName = ref<string>('');
 	let oldLayerName = ref<string>('');
-	let selectedLayerType = ref<LayerType | undefined>(undefined);
-	let selectedLayerTypeOptions = ref<{ option: LayerOption, optionValue: string | number | undefined }[]>([]);
+	let layerName = ref<string>('');
+	let selectedLayerType = ref<LayerType>();
+	let	selectedLayerTypeOptions = ref<{ option: LayerOption, optionValue: string|number|undefined }[]>([]);
 
-	let layerTypes = ref(await useFetch<LayerType[]>('http://localhost:8000/tflayertype/?format=json').data.value);
-    let layerTypeOptions = ref(await useFetch<LayerOption[]>('http://localhost:8000/tflayertypeoption/?format=json').data.value);
+	let layerTypeOptionsData = await useFetch<LayerOption[]>('http://localhost:8000/tflayertypeoption/?format=json');
+	let layerTypeOptions = ref(layerTypeOptionsData.data.value);
+
+	let layerTypesData = await useFetch<LayerType[]>('http://localhost:8000/tflayertype/?format=json');
+	let layerTypes = ref<LayerType[] | null>(layerTypesData.data.value);
 
 	watch(() => props.layerToEdit, () => {
 		updateLayerToEdit();

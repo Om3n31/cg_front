@@ -140,71 +140,78 @@
     async function rebuildNetwork(network: Network) {
 
         let url: string = 'http://localhost:8000/neuralnetwork/' + useRoute().params.id.toString() + '/';
-        await useFetch<DBNetwork>(url, { method: 'GET' }).then(NNresponse => {
 
-            if(!NNresponse.data.value)
-                return;
+        let NNresponse = await useFetch<DBNetwork>(url, { method: 'GET' });
 
-            network.id = NNresponse.data.value.id;
-            network.name = NNresponse.data.value.name;
+        if(!NNresponse.data.value)
+            return;
 
-            let layers = useFetch<DBLayer[]>('http://localhost:8000/layer/',{ method: 'GET' }).then(layerResponse => { 
-                
-                if(!layerResponse.data.value)
+        network.id = NNresponse.data.value.id;
+        network.name = NNresponse.data.value.name;
+
+        //get layer types and layers type options 
+        let layerOptionReponse = await useFetch<LayerOption[]>('http://localhost:8000/tflayertypeoption/', { method: 'GET' })
+        let layerResponse = await useFetch<DBLayer[]>('http://localhost:8000/layer/',{ method: 'GET' });
+
+        let layerTypeResponse = await useFetch<LayerType[]>('http://localhost:8000/tflayertype/',{ method: 'GET' });
+
+        if(!layerResponse.data.value)
+            return;
+
+        layerResponse.data.value.forEach(layer => {
+            if(layer.neural_network == network.id) {
+
+                let type = layerTypeResponse.data.value?.find(layerType => layerType.id == layer.type);
+
+                let typeOptions = layerResponse.data.value?.filter(typeOption => type?.options.includes(typeOption.id)) 
+                let typeOptionIds: number[] | undefined = typeOptions?.map(typeOption => typeOption.id);
+
+                if(!type)
                     return;
 
-                layerResponse.data.value.forEach(layer => {
-                    if(layer.neural_network == network.id) {
-                        network.layers.push({
-                            id: layer.id,
-                            name: layer.name,
-                            position: layer.position,
-                            type: { id: layer.type, name: 'name', options: [] },
-                            options: []
-                        });
-                    }
+                network.layers.push({
+                    id: layer.id,
+                    name: layer.name,
+                    position: layer.position,
+                    type: { id: type.id, name: type.name, options: typeOptionIds ? typeOptionIds : []},
+                    options: []
                 });
+            }
+        });
 
-                //order the layers by position
-                network.layers.sort((a, b) => {
-                    if(!a.position)
-                        return 1;
-                    if(!b.position)
-                        return -1;
-                    if(a.position < b.position)
-                        return -1;
-                    if(a.position > b.position)
-                        return 1;
-                    return 0;
-                });
-                
-                //get the options
-                useFetch<LayerOption[]>('http://localhost:8000/tflayertypeoption/', { method: 'GET' }).then(layerOptionReponse => {
+        //order the layers by position
+        network.layers.sort((a, b) => {
+            if(!a.position)
+                return 1;
+            if(!b.position)
+                return -1;
+            if(a.position < b.position)
+                return -1;
+            if(a.position > b.position)
+                return 1;
+            return 0;
+        });
+        
+        let optionResponse = await useFetch<DBOption[]>('http://localhost:8000/tfoption/', { method: 'GET' })
+        
+        if(!optionResponse.data.value)
+            return;
 
-                    useFetch<DBOption[]>('http://localhost:8000/tfoption/', { method: 'GET' }).then(optionResponse => {
+        optionResponse.data.value.forEach(option => {
+            network.layers.forEach(layer => {
+
+                if(layer.id == option.layer && layerOptionReponse.data.value) {
+
+                    let optionData = layerOptionReponse.data.value.find(layerTypeOption => layerTypeOption.id == option.option);
                     
-                        if(!optionResponse.data.value)
-                            return;
-
-                        optionResponse.data.value.forEach(option => {
-                            network.layers.forEach(layer => {
-
-                                if(layer.id == option.layer && layerOptionReponse.data.value) {
-
-                                    let optionData = layerOptionReponse.data.value.find(layerTypeOption => layerTypeOption.id == option.option);
-                                    
-                                    if(!optionData)
-                                        return;
-                                    
-                                    layer.options.push({
-                                        option: optionData,
-                                        optionValue: option.option_value
-                                    });
-                                }
-                            });
-                        });
+                    if(!optionData)
+                        return;
+                    
+                    layer.options.push({
+                        option: optionData,
+                        optionValue: option.option_value
                     });
-                });
+                }
             });
         });
     }

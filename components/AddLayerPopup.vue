@@ -9,7 +9,7 @@
 						<div class="relative w-full mt-4">
 
 							<label for="layerTypes" class="block font-medium dark:text-white mb-2">Layer type</label>
-							<select v-model="selectedLayerType" @change="displayOptions()" id="layerTypes" class="appearance-none border text-sm rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white">
+							<select v-if="layerTypes?.length" v-model="selectedLayerType" @change="displayOptions()" id="layerTypes" class="appearance-none border text-sm rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white">
 								<option v-for="layerType in layerTypes" :value=layerType>{{ layerType.name }}</option>
 							</select>
 							
@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-
+	
 	import { Network, Layer, LayerType, LayerOption } from '../interfaces/NetworkInterfaces';
 
 	const props = defineProps({
@@ -65,14 +65,17 @@
 
 	const emit = defineEmits(['addLayer', 'close']);
 
-	let layerTypes = ref(await useFetch<LayerType[]>('http://localhost:8000/tflayertype/?format=json').data.value);
-    let layerTypeOptions = ref(await useFetch<LayerOption[]>('http://localhost:8000/tflayertypeoption/?format=json').data.value);
-
 	let layerName = ref<string>('');
 	let selectedLayerType = ref<LayerType>();
 	let	selectedLayerTypeOptions = ref<{ option: LayerOption, optionValue: string|number|undefined }[]>([]);
 
-	function displayOptions() {
+	let layerTypeOptionsData = await useFetch<LayerOption[]>('http://localhost:8000/tflayertypeoption/?format=json');
+	let layerTypeOptions = ref(layerTypeOptionsData.data.value);
+
+	let layerTypesData = await useFetch<LayerType[]>('http://localhost:8000/tflayertype/?format=json');
+	let layerTypes = ref<LayerType[] | null>(layerTypesData.data.value);
+
+	let displayOptions = () => {
 
 		let optionList = layerTypeOptions.value?.filter((option) => { return selectedLayerType.value?.options.includes(option.id) });
 		
@@ -85,7 +88,7 @@
 			selectedLayerTypeOptions.value.push({ option: option, optionValue: undefined});
 	}
 
-	function addLayer() {
+	let addLayer = () => {
 
 		if(!layerName.value) {
 			alert('The name of the layer must be specified.');
@@ -103,10 +106,11 @@
 		closePopup();
 	}
 
-	function closePopup() {
+	let closePopup = () => {
 		layerName.value = '';
 		selectedLayerType.value = undefined;
 		selectedLayerTypeOptions.value = [];
 		emit('close');
 	}
+
 </script>
