@@ -48,7 +48,8 @@ export class GraphicalNeuralNetwork {
 
         this.currentPosition = this.path.position;
         
-        let textPosition = new paper.Point(this.path.bounds.center.x - 25, this.path.bounds.center.y)
+        let textPosition = new paper.Point(this.path.bounds.center.x, this.path.bounds.center.y)
+
         this.text =new paper.PointText({
                             point: textPosition,  // Position of the text within the rectangle
                             content: text, // Text content

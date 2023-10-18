@@ -66,7 +66,7 @@
 	const emit = defineEmits(['addLayer', 'close']);
 
 	let layerTypes = ref(await useFetch<LayerType[]>('http://localhost:8000/tflayertype/?format=json').data.value);
-    let layerTypeOptions = ref(await useFetch<LayerOption[]>('http://localhost:8000/tflayertypeoption/?format=json').data.value);
+	let layerTypeOptions = ref(await useFetch<LayerOption[]>('http://localhost:8000/tflayertypeoption/?format=json').data.value);
 
 	let layerName = ref<string>('');
 	let selectedLayerType = ref<LayerType>();

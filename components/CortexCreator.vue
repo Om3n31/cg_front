@@ -5,7 +5,13 @@
     <div>
       <canvas id="canvas" class="border-2 border-white rounded-lg w-full"></canvas>
     </div>
-    <!-- EDIT CORTEX BUTTON-->
+    <Transition>  
+        <AddCortexPopup v-show="showAddCortexPopup"  @addCortex="addCortex" @close="closeAddCortexPopup"></AddCortexPopup>
+    </Transition>
+
+    <button @click="openAddCortexPopup" class="border-2 border-white-700 mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-red-700 hover:bg-opacity-30 transition-all">
+					Create
+	</button>
     
     <div id="context-menu" style="position: absolute; display: none; background-color: #fff;">
 
@@ -16,11 +22,6 @@
 
     </div>
     
-    <!--
-    <button @click="confirmChanges" class="border-2 border-white-700 mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-red-700 hover:bg-opacity-30 transition-all">
-					Confirm changes
-	</button>
-    -->
 </template>
 
 <script setup lang="ts">
@@ -29,41 +30,8 @@
     import {GraphicalNeuralNetwork} from "../classes/GraphicalNeuralNetwork"
     import {Canvas} from "../classes/Canvas"
     import * as paper from "paper";
-    import {Cortex, Link, Network} from "../interfaces/NetworkInterfaces"
-import { link } from "fs";
-    
-    const props = defineProps({
-        cortex: {
-            type: Object as PropType<Cortex>,
-            required: true,
-        },
-    });
-
-    async function getNetworks(): Promise<Network[]> {
-        let data1 = await useFetch<Network[]>('http://localhost:8000/neuralnetwork/?format=json');
-
-        let existingNetworks: Network[] = [];
-
-        if (data1.data.value) {
-            existingNetworks = data1.data.value;
-            existingNetworks = existingNetworks.filter(network => network.cortex === props.cortex.id);
-        }
-
-        return existingNetworks;
-    }
-
-    async function getLinks(): Promise<Link[]> {
-        let data1 = await useFetch<Link[]>('http://localhost:8000/link/?format=json');
-
-        let existingLinks: Link[] = [];
-
-        if (data1.data.value) {
-            existingLinks = data1.data.value;
-            existingLinks = existingLinks.filter(link => link.cortex === props.cortex.id);
-        }
-
-        return existingLinks;
-    }
+    import {Link, Network} from "../interfaces/NetworkInterfaces"
+    import {Cortex} from "../interfaces/NetworkInterfaces"
 
     const canvas = new Canvas();
 
@@ -75,6 +43,7 @@ import { link } from "fs";
     };
 
     let showAddNetworkPopup = ref(false);
+    let showAddCortexPopup = ref(false);
 
     let openAddNetworkPopup: () => void;
 
@@ -82,10 +51,19 @@ import { link } from "fs";
         showAddNetworkPopup.value = false;
     };
 
+    let openAddCortexPopup: () => void = () => {
+        showAddCortexPopup.value = true;
+    };
+
+    const closeAddCortexPopup: () => void = () => {
+        showAddCortexPopup.value = false;
+    };
+
     let addNetwork: (network : Network) => void;
     let deleteNetwork: () => void;
     let deleteLink: () => void;
     let editNetwork: () => void;
+    let addCortex: (cortexName: string) => void;
 
     const closeContextMenu = () => {
             const contextMenu = document.getElementById('context-menu');
@@ -113,54 +91,16 @@ import { link } from "fs";
             }
         };
     
-    onMounted(async () => {        
+    onMounted(() => {        
 
         paper.setup(document.getElementById('canvas') as HTMLCanvasElement);
 
-        const existingNetworks = await getNetworks();
-
-        existingNetworks.forEach(network => {
-
-            if (network.id){
-                canvas.graphicalNeuralNetworks.push(
-                            new GraphicalNeuralNetwork(
-                                network.id,
-                                network.x, 
-                                network.y,
-                                100,
-                                100,
-                                '#525B76',
-                                network.name,
-                                false,
-                                false,
-                                canvas
-                            )
-                        );
-            }
-        });
-
-        const existingLinks = await getLinks();
-
-        existingLinks.forEach(link => {
-            let fromNetwork = canvas.graphicalNeuralNetworks.find(network => network.id === link.from_network.id);
-            let toNetwork = canvas.graphicalNeuralNetworks.find(network => network.id === link.to_network.id);
-
-                if (fromNetwork && toNetwork) {
-                    canvas.graphicalLinks.push(
-                                    new GraphicalLink(
-                                        fromNetwork,
-                                        toNetwork
-                                    )
-                                );
-                }
-        });
-
+        const canvasHtml = document.getElementById('canvas');
+        
         //Allow to have the position of the mouse in the canvas at any time
 
         let pointerInCanvas: paper.Point;
 
-        const canvasHtml = document.getElementById('canvas');
-        
         function onMouseMove(mouseMoveEvent: paper.MouseEvent) {
             pointerInCanvas = mouseMoveEvent.point;
         }
@@ -168,6 +108,61 @@ import { link } from "fs";
         paper.view.onMouseMove = onMouseMove;
 
         window.addEventListener('click', closeContextMenu);
+
+        // CORTEX CREATION BEHAVIOR //
+
+        addCortex = (cortexName: string) => {
+
+            useFetch<Cortex> (
+                'http://localhost:8000/cortexv2/', 
+                {
+                    method: 'POST',
+                    body: { 
+                        name: cortexName,
+                    }
+                }
+            ).then( (cortexResponse) => {
+                
+                const cortexId = cortexResponse.data.value?.id
+
+                console.log(cortexId);
+
+                canvas.graphicalLinks.forEach(async link => {
+                    
+                    let linkResponse = await useFetch<Link> (
+                    'http://localhost:8000/link/', 
+                    {
+                        method: 'POST',
+                        body: {    
+                            cortex: cortexId,
+                            from_network: link.fromNetwork.id,
+                            to_network:link.toNetwork.id,
+                        }
+                    });
+                    console.log(linkResponse);
+                })
+
+                canvas.graphicalNeuralNetworks.forEach(async network => {
+                
+                    let networkResponse = await useFetch<Link> (
+                    'http://localhost:8000/neuralnetwork/' + network.id + '/', 
+                    {
+                        method: 'PUT',
+                        body: {
+                            name: network.text.content,
+                            x: network.path.position.x,
+                            y: network.path.position.y,
+                            hdf5: null,
+                            cortex: cortexId,
+                        }
+                    });
+                    console.log(networkResponse);
+                })
+            });
+
+            window.location.href = location.origin + '/cortexes';
+        }
+
 
         if (canvasHtml) {
 

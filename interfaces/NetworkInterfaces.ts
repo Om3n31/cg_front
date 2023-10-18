@@ -1,13 +1,15 @@
 export interface Cortex {
     id: number | undefined,
     name: string,
-    links: Link[] | undefined
 }
 
 export interface Network {
     id: number | undefined,
     name: string,
-    layers: Layer[]
+    x: number,
+    y: number,
+    layers: Layer[],
+    cortex: number
 }
 
 export interface Link {

@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 
-	import { Cortex} from '../interfaces/NetworkInterfaces';
+	import {Cortex} from '../interfaces/NetworkInterfaces';
 
 	const emit = defineEmits(['addCortex', 'close']);
 
@@ -37,10 +37,17 @@
                     nameAlreadyExists = true;
                 }
         });
+		
         if (nameAlreadyExists){
             alert('The name of the cortex must be unique. Please check the cortex\'s name and try again');
 			return;
         }
+
+		if (cortexName.value === ""){
+            alert('The cortex must have a name.');
+			return;
+        }
+
 
         emit('addCortex', cortexName.value);
 		closePopup();
