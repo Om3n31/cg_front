@@ -5,6 +5,13 @@
     <div>
       <canvas id="canvas" class="border-2 border-white rounded-lg w-full"></canvas>
     </div>
+    <Transition>  
+        <AddCortexPopup v-show="showAddCortexPopup"  @addCortex="addCortex" @close="closeAddCortexPopup"></AddCortexPopup>
+    </Transition>
+
+    <button @click="openAddCortexPopup" class="border-2 border-red-700 mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-red-700 hover:bg-opacity-30 transition-all">
+					Create
+	</button>
     
     <div id="context-menu" style="position: absolute; display: none; background-color: #fff;">
 
@@ -24,7 +31,10 @@
     import {GraphicalNeuralNetwork} from "../classes/GraphicalNeuralNetwork"
     import {Canvas} from "../classes/Canvas"
     import * as paper from "paper";
-    import {Network} from "../interfaces/NetworkInterfaces"
+    import {Link, Network} from "../interfaces/NetworkInterfaces"
+    import {Cortex} from "../interfaces/NetworkInterfaces"
+import { link } from "fs";
+
     
     const canvas = new Canvas();
 
@@ -36,6 +46,7 @@
     };
 
     let showAddNetworkPopup = ref(false);
+    let showAddCortexPopup = ref(false);
 
     let openAddNetworkPopup: () => void;
 
@@ -43,11 +54,21 @@
         showAddNetworkPopup.value = false;
     };
 
+    let openAddCortexPopup: () => void = () => {
+        showAddCortexPopup.value = true;
+    };
+
+    const closeAddCortexPopup: () => void = () => {
+        showAddCortexPopup.value = false;
+    };
+
+
+
     let addNetwork: (network : Network) => void;
     let deleteNetwork: () => void;
     let deleteLink: () => void;
-    
-
+    let editNetwork: () => void;
+    let addCortex: (cortexName: string) => void;
 
     const closeContextMenu = () => {
             const contextMenu = document.getElementById('context-menu');
@@ -66,6 +87,10 @@
                 const deleteLinkHtml = document.getElementById('menu-item-delete-link');
                 if (deleteLinkHtml) {
                     deleteLinkHtml.removeEventListener('click', deleteLink);
+                }
+                const editNetworkHtml = document.getElementById('menu-item-edit-NN');
+                if (editNetworkHtml) {
+                    editNetworkHtml.removeEventListener('click', editNetwork);
                 }
                 // Repeat this pattern for other context menu items you've added event listeners to.
             }
@@ -88,6 +113,39 @@
         paper.view.onMouseMove = onMouseMove;
 
         window.addEventListener('click', closeContextMenu);
+
+        // CORTEX CREATION BEHAVIOR //
+
+        addCortex = (cortexName: string) => {
+            useFetch<Cortex> (
+                'http://localhost:8000/cortexv2/', 
+                {
+                    method: 'POST',
+                    body: { 
+                        name: cortexName,
+                    }
+                }
+            ).then( (cortexResponse) => {
+    
+                canvas.graphicalLinks.forEach(async link => {
+                    
+                    let linkResponse = await useFetch<Link> (
+                    'http://localhost:8000/cortexv2/', 
+                    {
+                        method: 'POST',
+                        body: {    
+                            cortex: cortexResponse.data.value?.id,
+                            from_network: link.fromNetwork.id,
+                            to_network:link.toNetwork.id,
+                        }
+                    });
+
+                    console.log(linkResponse);
+                })
+            });
+
+;
+        }
 
         if (canvasHtml) {
 
@@ -201,6 +259,18 @@
                 }
 
                 // CONTEXT MENU : EDIT NETWORK BEHAVIOR //
+
+                editNetwork = () => {
+                    if (contextMenu && contextMenu.style.display == 'block' && neuralNetworkClicked != null){
+                        window.location.href = location.origin + '/neural-networks/' + neuralNetworkClicked.id;
+                        closeContextMenu();
+                    }
+                }
+
+                const editNetworkHtml = document.getElementById('menu-item-edit-NN');
+                if(editNetworkHtml) {
+                    editNetworkHtml.addEventListener('click', editNetwork);
+                }
                 
                 // CONTEXT MENU : DELETE NETWORK BEHAVIOR //
 
@@ -229,7 +299,8 @@
                 if(deleteLinkHtml) {
                     deleteLinkHtml.addEventListener('click', deleteLink);
                 }
-            });
+            })
+            ;
         }
         //TODO : display existing neural network
         
