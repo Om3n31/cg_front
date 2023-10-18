@@ -21,7 +21,7 @@
                         <NuxtLink to="/datasets">Datasets</NuxtLink>
                     </li>
                 </ul>
-                <NuxtLink to="/account">Account</NuxtLink>
+                <NuxtLink></NuxtLink>
 
             </nav>
         </header>

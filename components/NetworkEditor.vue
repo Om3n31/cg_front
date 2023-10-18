@@ -44,7 +44,7 @@
 </template>
 <script setup lang="ts">
 
-    import { ref } from 'vue';
+    import { ref, onMounted } from 'vue';
     import { Network, Layer, LayerType, LayerOption, DBLayer, DBNetwork } from '../interfaces/NetworkInterfaces';
 
     let showCreationPopup = ref(false);
@@ -52,6 +52,7 @@
 
     //initialize default layer to avoid typing errors when passing the argument to EditLayerPopup
     let defaultLayer = {
+        id: 0,
         name: 'name',
         type: { id: 0, name: 'name', options: []},
         options: []
@@ -60,7 +61,10 @@
 
     //rebuilding the complex objects from the DB
     let network = ref<Network>({ id: undefined, name: '', layers: [] });
-    rebuildNetwork(network.value)
+
+    onMounted(async () => {
+        await rebuildNetwork(network.value);
+    });
 
     function addLayer(name: string, type: LayerType, options: { option: LayerOption, optionValue: string|number|undefined }[]): void {
         
@@ -68,7 +72,7 @@
         let typeClone = { ...type };
         let optionsClone = { ...options };
 
-        network.value.layers.push({ name: nameClone, type: typeClone, options: optionsClone});
+        network.value.layers.push({id: 0, name: nameClone, type: typeClone, options: optionsClone});
     }
 
     function editLayer(oldLayerName: string, layerName: string, selectedLayerType: LayerType, selectedLayerTypeOptions: { option: LayerOption, optionValue: string|number|undefined }[]) {
@@ -179,6 +183,8 @@
 
     async function rebuildNetwork(network: Network) {
 
+        console.log('Ah!')
+
         let networkDataResponse: DBNetwork | null = await useFetch<DBNetwork>(
             'http://localhost:8000/neuralnetwork/' + useRoute().params.id.toString() + '/', 
             {
@@ -186,6 +192,7 @@
             }
         ).data.value;
 
+        console.log(networkDataResponse);
         if(!networkDataResponse)
             return;
 
@@ -197,7 +204,7 @@
         }
 
         for(let layer of networkDataResponse.layers) {
-        
+            console.log(layer);
         }
 
 
