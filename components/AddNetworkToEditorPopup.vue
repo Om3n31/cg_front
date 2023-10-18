@@ -39,7 +39,6 @@
 	let selectedNetwork = ref<Network>();
 
 	function addNetwork() {
-
 		emit('addNetwork', selectedNetwork.value);
 		closePopup();
 	}
