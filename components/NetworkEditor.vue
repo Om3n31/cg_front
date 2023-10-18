@@ -38,14 +38,14 @@
 
         </div>
     </div>
-    <div @click="createNetwork()" class="cursor-pointer inline-flex items-center justify-center px-4 py-2 text-base font-medium leading-6 text-white whitespace-no-wrap bg-slate-800 border-2 border-cortex-light-green rounded-md shadow-sm hover:bg-cortex-light-green hover:bg-opacity-30 transition-all"> 
+    <div @click="editNetwork()" class="cursor-pointer inline-flex items-center justify-center px-4 py-2 text-base font-medium leading-6 text-white whitespace-no-wrap bg-slate-800 border-2 border-cortex-light-green rounded-md shadow-sm hover:bg-cortex-light-green hover:bg-opacity-30 transition-all"> 
         Confirm
     </div>
 </template>
 <script setup lang="ts">
 
     import { ref, onMounted } from 'vue';
-    import { Network, Layer, LayerType, LayerOption, DBLayer, DBNetwork } from '../interfaces/NetworkInterfaces';
+    import { Network, Layer, LayerType, LayerOption, DBLayer, DBNetwork, DBOption } from '../interfaces/NetworkInterfaces';
 
     let showCreationPopup = ref(false);
     let showEditionPopup = ref(false);
@@ -54,6 +54,7 @@
     let defaultLayer = {
         id: 0,
         name: 'name',
+        position: null,
         type: { id: 0, name: 'name', options: []},
         options: []
     }
@@ -72,7 +73,7 @@
         let typeClone = { ...type };
         let optionsClone = { ...options };
 
-        network.value.layers.push({id: 0, name: nameClone, type: typeClone, options: optionsClone});
+        network.value.layers.push({id: 0, name: nameClone, position: null, type: typeClone, options: optionsClone});
     }
 
     function editLayer(oldLayerName: string, layerName: string, selectedLayerType: LayerType, selectedLayerTypeOptions: { option: LayerOption, optionValue: string|number|undefined }[]) {
@@ -120,7 +121,7 @@
         let layerToMove = network.value.layers[index];
         network.value.layers[index] = network.value.layers[index-1];
         network.value.layers[index-1] = layerToMove;
-        }
+    }
 
     function makeLayerGoRight(index: number)  {
             
@@ -132,88 +133,79 @@
         network.value.layers[index+1] = layerToMove;
     }
 
-    async function createNetwork() {
+    async function editNetwork() {
 
-        let layers: DBLayer[] = [];
-
-        //loop through each layer options 
-        network.value.layers.forEach(layer => {
-
-            let newLayer = {
-                name: layer.name,
-                type: layer.type.id,
-                options: [] as number[]
-            } as DBLayer;
-
-            let optionId: number = 0;
-            console.log(layer.options);
-            layer.options = Object.values(layer.options);
-            layer.options.forEach(async(option) => {
-                
-                option.optionValue = option.optionValue?.toString();
-                
-                let response: number | null = await useFetch<number>(
-                    'http://localhost:8000/tfoption/', 
-                    {
-                        method: 'POST',
-                        body: { 
-                            option: option.option.id,
-                            option_value: option.optionValue
-                        }
-                    }
-                ).data.value;
-
-                optionId = response ? response : 0;
-                
-                console.log(optionId);
-
-                newLayer.options.push(optionId);
-            });
-
-            layers.push(newLayer);
-        });
-
-        /*
-        await $fetch( '/localhost:8000/neuralnetwork/', {
-            method: 'POST',
-            body: network
-        });
-        */
     }
 
     async function rebuildNetwork(network: Network) {
 
-        console.log('Ah!')
+        let url: string = 'http://localhost:8000/neuralnetwork/' + useRoute().params.id.toString() + '/';
+        await useFetch<DBNetwork>(url, { method: 'GET' }).then(NNresponse => {
 
-        let networkDataResponse: DBNetwork | null = await useFetch<DBNetwork>(
-            'http://localhost:8000/neuralnetwork/' + useRoute().params.id.toString() + '/', 
-            {
-                method: 'GET'
-            }
-        ).data.value;
+            if(!NNresponse.data.value)
+                return;
 
-        console.log(networkDataResponse);
-        if(!networkDataResponse)
-            return;
+            network.id = NNresponse.data.value.id;
+            network.name = NNresponse.data.value.name;
 
-        network.id = networkDataResponse.id;
+            let layers = useFetch<DBLayer[]>('http://localhost:8000/layer/',{ method: 'GET' }).then(layerResponse => { 
+                
+                if(!layerResponse.data.value)
+                    return;
 
-            if(!networkDataResponse.layers) {
-            network.layers = [];
-            return;
-        }
+                layerResponse.data.value.forEach(layer => {
+                    if(layer.neural_network == network.id) {
+                        network.layers.push({
+                            id: layer.id,
+                            name: layer.name,
+                            position: layer.position,
+                            type: { id: layer.type, name: 'name', options: [] },
+                            options: []
+                        });
+                    }
+                });
 
-        for(let layer of networkDataResponse.layers) {
-            console.log(layer);
-        }
+                //order the layers by position
+                network.layers.sort((a, b) => {
+                    if(!a.position)
+                        return 1;
+                    if(!b.position)
+                        return -1;
+                    if(a.position < b.position)
+                        return -1;
+                    if(a.position > b.position)
+                        return 1;
+                    return 0;
+                });
+                
+                //get the options
+                useFetch<LayerOption[]>('http://localhost:8000/tflayertypeoption/', { method: 'GET' }).then(layerOptionReponse => {
 
+                    useFetch<DBOption[]>('http://localhost:8000/tfoption/', { method: 'GET' }).then(optionResponse => {
+                    
+                        if(!optionResponse.data.value)
+                            return;
 
+                        optionResponse.data.value.forEach(option => {
+                            network.layers.forEach(layer => {
 
+                                if(layer.id == option.layer && layerOptionReponse.data.value) {
 
-        //let layerResponse: DBLayer | null = await useFetch<DBLayer>(
-
-
-        console.log(networkDataResponse);
-
+                                    let optionData = layerOptionReponse.data.value.find(layerTypeOption => layerTypeOption.id == option.option);
+                                    
+                                    if(!optionData)
+                                        return;
+                                    
+                                    layer.options.push({
+                                        option: optionData,
+                                        optionValue: option.option_value
+                                    });
+                                }
+                            });
+                        });
+                    });
+                });
+            });
+        });
     }
 </script>

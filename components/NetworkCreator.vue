@@ -65,6 +65,7 @@
     let defaultLayer = {
         id: 0,
         name: 'name',
+        position: null,
         type: { id: 0, name: 'name', options: []},
         options: []
     }
@@ -79,7 +80,7 @@
         let typeClone = { ...type };
         let optionsClone = { ...options };
 
-        network.value.layers.push({id: 0, name: nameClone, type: typeClone, options: optionsClone});
+        network.value.layers.push({id: 0, name: nameClone, position: null, type: typeClone, options: optionsClone});
     }
 
     function editLayer(oldLayerName: string, layerName: string, selectedLayerType: LayerType, selectedLayerTypeOptions: { option: LayerOption, optionValue: string|number|undefined }[]) {
@@ -120,25 +121,55 @@
 
     async function createNetwork() {
 
+        if(!network.value.name) {
+            alert('Please enter a name for the network.');
+            return;
+        }
+
         loading.value = true;
 
-        let layerIds: number[] = [];
-        let layers: DBLayer[] = [];
+        let networkResponse = await useFetch<DBLayer> (
+            'http://localhost:8000/neuralnetwork/', 
+            {
+                method: 'POST',
+                body: { 
+                    name: network.value.name,
+                    hdf5: null,
+                }
+            }
+        );
+        
+        if(!networkResponse.data.value) {
+            alert('An error occured during network creation. Please try again later.');
+            return;
+        }
 
-        for(let layer of network.value.layers) {
+        network.value.layers = Object.values(network.value.layers);
 
-            let newLayer = {
-                id: 0,
-                name: layer.name,
-                type: layer.type.id,
-                options: [] as number[]
-            } as DBLayer;
+        for(let i = 0; i < network.value.layers.length; i++) {
 
-            let optionId: number = 0;
+            let layerResponse = await useFetch<DBLayer> (
+                'http://localhost:8000/layer/', 
+                {
+                    method: 'POST',
+                    
+                    body: { 
+                        name: network.value.layers[i].name,
+                        position: i,
+                        type: network.value.layers[i].type.id,
+                        neural_network: networkResponse.data.value.id
+                    }
+                }
+            );
 
-            layer.options = Object.values(layer.options);
+            if(!layerResponse.data.value) {
+                alert('An error occured during layer #' + i + ' creation. Please try again later.');
+                return;
+            }
 
-            for(let option of layer.options) {
+            network.value.layers[i].options = Object.values(network.value.layers[i].options);
+
+            for(let option of network.value.layers[i].options) {
                 
                 option.optionValue = option.optionValue?.toString();
                 
@@ -148,52 +179,13 @@
                         method: 'POST',
                         body: { 
                             option: option.option.id,
-                            option_value: option.optionValue
+                            option_value: option.optionValue,
+                            layer: layerResponse.data.value.id
                         }
                     }
                 );
-                    
-                console.log(option.optionValue);
-                console.log(optionResponse);
-
-                optionId = optionResponse.data.value ? (optionResponse.data.value.id ? optionResponse.data.value.id : 0) : 0;
-                
-                console.log(optionId);
-
-                newLayer.options.push(optionId);
             }
-
-            layers.push(newLayer);
         }
-
-        for(let layer of layers) {
-            let layerResponse = await useFetch<DBLayer> (
-                'http://localhost:8000/layer/', 
-                {
-                    method: 'POST',
-                    body: { 
-                        name: layer.name,
-                        type: layer.type,
-                        options: layer.options
-                    }
-                }
-            );
-
-            layer.id = layerResponse.data.value ? (layerResponse.data.value.id ? layerResponse.data.value.id : 0) : 0;
-            layerIds.push(layer.id);
-        }
-
-        let networkResponse = await useFetch<DBLayer> (
-            'http://localhost:8000/neuralnetwork/', 
-            {
-                method: 'POST',
-                body: { 
-                    name: network.value.name,
-                    hdf5: null,
-                    layers: layerIds
-                }
-            }
-        );
 
         window.location.href = location.origin + '/neural-networks';
     }

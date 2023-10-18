@@ -6,14 +6,15 @@ export interface Network {
 
 export interface DBNetwork {
     id: number | undefined,
-    name: string,
-    layers: number[]
+    hdf5: string | undefined | null,
+    name: string
 }
 
 export interface Layer {
     id: number,
     name: string,
     type: LayerType,
+    position: number | null | undefined,
     options: {
         option: LayerOption,
         optionValue: string|number|undefined 
@@ -23,8 +24,9 @@ export interface Layer {
 export interface DBLayer {
     id: number,
     name: string,
+    position: number,
     type: number,
-    options: number[]
+    neural_network: number
 }
 
 export interface LayerType {
@@ -38,4 +40,11 @@ export interface LayerOption {
     name: string,
     possible_values: string[],
     type: string
+}
+
+export interface DBOption {
+    id: number,
+    option: number,
+    option_value: string,
+    layer: number
 }

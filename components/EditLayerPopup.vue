@@ -105,6 +105,11 @@
 
 	function editLayer() {
 
+		if(!layerName.value) {
+			alert('The name of the layer must be specified.');
+			return;
+		}
+		
 		for(let layer of props.network.layers) {
 			if(layer.name == layerName.value && layer.name != oldLayerName.value) {
 				alert('The name of the layer must be unique. Please check the layer\'s name and try again');

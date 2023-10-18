@@ -1,6 +1,6 @@
 <template>
     <NuxtLink :to="`/neural-networks/${network.id}`" class="mb-3">
-        <div class="bg-slate-900 border-2 border-cortex-light-green rounded-lg font-bold truncate p-3 h-full cursor-pointer transform transition-all hover:scale-105">
+        <div class="bg-slate-800 border-2 border-cortex-light-green rounded-lg font-bold truncate p-3 h-full cursor-pointer transform transition-all hover:bg-cortex-light-green hover:bg-opacity-30">
             {{network.name}}           
         </div>
     </NuxtLink>
