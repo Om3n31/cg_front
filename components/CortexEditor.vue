@@ -142,9 +142,12 @@ import { link } from "fs";
         const existingLinks = await getLinks();
 
         existingLinks.forEach(link => {
-            let fromNetwork = canvas.graphicalNeuralNetworks.find(network => network.id === link.from_network.id);
-            let toNetwork = canvas.graphicalNeuralNetworks.find(network => network.id === link.to_network.id);
-
+            console.log(link)
+            console.log(canvas.graphicalNeuralNetworks);
+            let fromNetwork = canvas.graphicalNeuralNetworks.find(network => network.id === link.from_network);
+            let toNetwork = canvas.graphicalNeuralNetworks.find(network => network.id === link.to_network);
+            console.log(fromNetwork);
+            console.log(toNetwork)
                 if (fromNetwork && toNetwork) {
                     canvas.graphicalLinks.push(
                                     new GraphicalLink(

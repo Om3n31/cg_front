@@ -15,9 +15,6 @@ export class GraphicalNeuralNetwork {
     public isLast: boolean;
     public leftHook: paper.Path.Circle | null;
     public rightHook: paper.Path.Circle | null;
-    public links: GraphicalLink[];
-    public inputs: number;
-    public outputs: number;
     public isDragging: boolean = false;
     public dragOffset: paper.Point | null = null;
     public isLinking: boolean = false
@@ -49,12 +46,13 @@ export class GraphicalNeuralNetwork {
         this.currentPosition = this.path.position;
         
         let textPosition = new paper.Point(this.path.bounds.center.x, this.path.bounds.center.y)
-
+        
         this.text =new paper.PointText({
-                            point: textPosition,  // Position of the text within the rectangle
+                            position: textPosition,  // Position of the text within the rectangle
                             content: text, // Text content
                             fillColor: 'white', // Text color
-                            fontSize: 12        // Font size (optional)
+                            fontSize: 15,        // Font size (optional)
+                            fontWeight: 'bold'
                         });
 
         this.isFirst = isFirst;
@@ -65,11 +63,6 @@ export class GraphicalNeuralNetwork {
 
         this.leftHook = new paper.Path.Circle(this.path.bounds.leftCenter, 7);
         this.leftHook.fillColor = new paper.Color('white');
-
-        this.links = [];
-
-        this.inputs = 1;
-        this.outputs = 1;
         
         this.linkingSegment = new paper.Path();
         this.linkingSegment.strokeColor = new paper.Color('#525B76');

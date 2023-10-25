@@ -14,8 +14,9 @@ export interface Network {
 
 export interface Link {
     id: number | undefined,
-    from_network: Network,
-    to_network: Network
+    from_network: number,
+    to_network: number,
+    cortex: number
 }
 
 export interface DBNetwork {

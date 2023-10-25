@@ -139,12 +139,11 @@
                             to_network:link.toNetwork.id,
                         }
                     });
-                    console.log(linkResponse);
                 })
 
                 canvas.graphicalNeuralNetworks.forEach(async network => {
                 
-                    let networkResponse = await useFetch<Link> (
+                    let networkResponse = await useFetch<Network> (
                     'http://localhost:8000/neuralnetwork/' + network.id + '/', 
                     {
                         method: 'PUT',
@@ -156,7 +155,6 @@
                             cortex: cortexId,
                         }
                     });
-                    console.log(networkResponse);
                 })
             });
 
@@ -197,7 +195,6 @@
                     }
                 });
 
-                console.log(linkClicked);
                 // Display context menu at the right position
 
 
@@ -256,26 +253,37 @@
 
                     let networkId: number = 0;
                     let networkName: string = '';
+                    let alreadyExists = false;
 
                     if(network.id && network.name){
                         networkId = network.id;
                         networkName = network.name;
                     }
 
-                    canvas.graphicalNeuralNetworks.push(
-                        new GraphicalNeuralNetwork(
-                            networkId,
-                            contextMenuPoint.x, 
-                            contextMenuPoint.y, 
-                            100,
-                            100,
-                            '#525B76',
-                            networkName,
-                            false,
-                            false,
-                            canvas
-                        )
-                    );
+                    canvas.graphicalNeuralNetworks.forEach(element => {
+                        if (element.id === networkId) {
+                            alreadyExists = true;
+                        }
+                    });
+
+                    if (!alreadyExists) {
+                        canvas.graphicalNeuralNetworks.push(
+                            new GraphicalNeuralNetwork(
+                                networkId,
+                                contextMenuPoint.x, 
+                                contextMenuPoint.y, 
+                                100,
+                                100,
+                                '#525B76',
+                                networkName,
+                                false,
+                                false,
+                                canvas
+                            )
+                        );
+                    } else {
+                        alert('Network already existing in this cortex');
+                    }
                 }
 
                 // CONTEXT MENU : EDIT NETWORK BEHAVIOR //
