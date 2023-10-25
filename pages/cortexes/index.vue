@@ -6,8 +6,12 @@
     </div>
 </template>
 
-<script setup>
-    const cortexes = ref([{ name: 'Cortex 1', id: 1 }, { name: 'Cortex 2', id: 2 }])
+<script setup lang='ts'>
 
-    //await useFetch('localhost:3000/cortexes');
+    import {Cortex} from "../../interfaces/NetworkInterfaces"
+
+    let data1 = await useFetch<Cortex[]>('http://localhost:8000/cortexv2/?format=json');
+
+    let cortexes = ref(data1.data.value);
+
 </script>

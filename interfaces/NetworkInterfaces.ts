@@ -1,19 +1,22 @@
 export interface Cortex {
     id: number | undefined,
     name: string,
-    links: Link[] | undefined
 }
 
 export interface Network {
     id: number | undefined,
     name: string,
-    layers: Layer[]
+    x: number,
+    y: number,
+    layers: Layer[],
+    cortex: number
 }
 
 export interface Link {
     id: number | undefined,
-    from_network: Network,
-    to_network: Network
+    from_network: number,
+    to_network: number,
+    cortex: number
 }
 
 export interface DBNetwork {

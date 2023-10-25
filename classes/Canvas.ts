@@ -23,9 +23,6 @@ export class Canvas {
             neuralNetwork.remove();
             this.deleteLinksOfNeuralNetwork(neuralNetwork)
             this.graphicalNeuralNetworks.splice(index, 1); // Remove one item at the found index
-            console.log('Item removed from the array.');
-        } else {
-            console.log('Item not found in the array.');
         }
     }
 
@@ -45,9 +42,6 @@ export class Canvas {
         if (index > -1) {
             link.segment?.remove();
             this.graphicalLinks.splice(index, 1);
-            console.log('Item removed from the array.');
-        } else {
-            console.log('Item not found in the array.');
         }
     }
 

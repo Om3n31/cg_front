@@ -4,7 +4,6 @@
 			<!-- Add your content for the popup card here -->
 			<slot>
 				<div class="w-full">
-					<input type="text" v-model="networkName" placeholder="Add network" class=" break-all break-words w-full text-3xl bg-slate-700 text-center font-bold"/>
 					<div class="flex items-start justify-start w-full h-full p-4">
 						<div class="relative w-full mt-4">
 							<label for="networks" class="block font-medium dark:text-white mb-2">Available networks</label>
@@ -33,8 +32,22 @@
 
 	const emit = defineEmits(['addNetwork', 'close']);
 
-	let networks = ref(await useFetch<Network[]>('http://localhost:8000/neuralnetwork/?format=json').data.value);
 
+	async function getAvailableNetworks(): Promise<Network[]> {
+
+		let data1 = await useFetch<Network[]>('http://localhost:8000/neuralnetwork/?format=json');
+
+		let availableNetworks: Network[] = [];
+
+		if (data1.data.value) {
+			availableNetworks = data1.data.value;
+			availableNetworks = availableNetworks.filter(network => network.cortex === null);
+		}
+		return availableNetworks;
+	}
+
+	let networks = ref(await getAvailableNetworks());
+	
 	let networkName = ref<string>('');
 	let selectedNetwork = ref<Network>();
 
